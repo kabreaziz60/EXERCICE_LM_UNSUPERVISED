@@ -32,11 +32,15 @@ La fonction principale `jaccard_index_text` accepte désormais une série d'opti
 | `lowercase` | Normalise en minuscules pour ignorer la casse. |
 | `keep_whitespace` | Utile en mode caractère si l'on souhaite garder les espaces. |
 | `strip_punctuation` | Supprime la ponctuation de base (`string.punctuation`) avant tokenisation. |
-| `stop_words` | Collection personnalisée de stop-words à ignorer (un set mixte FR/EN est fourni via `DEFAULT_STOP_WORDS`). |
+| `use_default_stopwords` | Active instantanément un set mixte FR/EN déjà fourni. |
+| `stop_words` | Ajoute/override votre propre liste (cumulable avec `use_default_stopwords`). |
 | `normalize_plural` | Simplifie la gestion des pluriels en enlevant un `s` final (solution rapide pour commencer). |
+| `lemmatizer` | Permet de brancher une fonction de lemmatisation/stemming maison (ex: `lambda t: stemmer.stem(t)`). |
 | `ngram_size` | Produit des n-grammes glissants (ex: bigrammes de caractères pour capter les lettres adjacentes). |
-| `respect_positions` | Active la version *positionnelle* de la formule du cours : seuls les tokens alignés (même index) peuvent correspondre, l'union vaut `max(len(A), len(B))`. |
-| `tokenizer` | Toujours possible d'injecter une fonction maison si l'on veut une logique totalement custom (lemmatisation, synonymes, etc.). |
+| `respect_positions` | Active la version *positionnelle* : seuls les tokens alignés (même index) peuvent correspondre, l'union vaut `max(len(A), len(B))`. |
+| `tokenizer` | Toujours possible d'injecter une fonction maison si l'on veut une logique totalement custom (nettoyage, synonymes...). |
+
+> **Doublons / multiensembles** : les tokens sont comptés via `collections.Counter`, donc `"good good day"` ≠ `"good day"` (le multiset retient bien les répétitions).
 
 Des variantes `jaccard_distance_text` et `jaccard_components_text` sont egalement exposes pour recuperer respectivement la distance ou le duo (intersection, union).
 

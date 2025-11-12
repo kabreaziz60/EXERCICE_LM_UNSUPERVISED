@@ -14,26 +14,54 @@ import string
 
 Tokens = List[str]
 Tokenizer = Callable[[str], Tokens]
+LemmaFn = Callable[[str], str]
 
 # Petite liste mixte de stop-words FR/EN pour démarrer.
 DEFAULT_STOP_WORDS = {
+    # Français
     "je",
     "tu",
     "il",
     "elle",
+    "on",
     "nous",
     "vous",
     "ils",
     "elles",
+    "me",
+    "te",
+    "se",
     "le",
     "la",
     "les",
-    "de",
-    "des",
-    "du",
     "un",
     "une",
+    "des",
+    "du",
+    "de",
+    "d",
     "et",
+    "en",
+    "a",
+    "à",
+    "au",
+    "aux",
+    "dans",
+    "pour",
+    "par",
+    "sur",
+    "avec",
+    "comme",
+    "qui",
+    "que",
+    "quoi",
+    "dont",
+    "ne",
+    "pas",
+    "plus",
+    "ou",
+    "mais",
+    # Anglais
     "the",
     "a",
     "an",
@@ -42,6 +70,26 @@ DEFAULT_STOP_WORDS = {
     "is",
     "are",
     "be",
+    "and",
+    "in",
+    "on",
+    "at",
+    "for",
+    "from",
+    "by",
+    "with",
+    "as",
+    "that",
+    "this",
+    "these",
+    "those",
+    "it",
+    "its",
+    "was",
+    "were",
+    "will",
+    "can",
+    "could",
 }
 
 _PUNCTUATION_TABLE = str.maketrans("", "", string.punctuation)
@@ -54,7 +102,9 @@ def tokenize_text(
     keep_whitespace: bool = False,
     strip_punctuation: bool = False,
     stop_words: Collection[str] | None = None,
+    use_default_stopwords: bool = False,
     normalize_plural: bool = False,
+    lemmatizer: LemmaFn | None = None,
     ngram_size: int = 1,
 ) -> Tokens:
     """Transforme une chaine en liste de tokens pour char ou word.
@@ -67,7 +117,9 @@ def tokenize_text(
             et retours a la ligne sont retires avant comptage.
         strip_punctuation: supprime ponctuation de base avant tokenisation.
         stop_words: collection de tokens a ignorer (utile pour mode "word").
+        use_default_stopwords: lorsqu'il est vrai, applique `DEFAULT_STOP_WORDS`.
         normalize_plural: tentative simple pour ramener les pluriels a leur singulier.
+        lemmatizer: fonction pour normaliser chaque token (hook pour stem/lemma externe).
         ngram_size: produit des n-grammes glissants si > 1.
     """
 
@@ -87,11 +139,23 @@ def tokenize_text(
     else:
         raise ValueError("mode doit valoir 'char' ou 'word'")
 
-    if stop_words:
-        tokens = [tok for tok in tokens if tok not in stop_words]
+    # Construit la liste finale de stop-words (preset + custom).
+    active_stop_words: Collection[str] | None = None
+    if use_default_stopwords or stop_words:
+        active_stop_words = set()
+        if use_default_stopwords:
+            active_stop_words.update(DEFAULT_STOP_WORDS)
+        if stop_words:
+            active_stop_words.update(stop_words)
+
+    if active_stop_words:
+        tokens = [tok for tok in tokens if tok not in active_stop_words]
 
     if normalize_plural and mode == "word":
         tokens = [_normalize_plural(tok) for tok in tokens]
+
+    if lemmatizer and mode == "word":
+        tokens = [lemmatizer(tok) for tok in tokens]
 
     if ngram_size > 1:
         tokens = _generate_ngrams(tokens, ngram_size)
@@ -107,7 +171,9 @@ def _ensure_tokens(
     keep_whitespace: bool,
     strip_punctuation: bool,
     stop_words: Collection[str] | None,
+    use_default_stopwords: bool,
     normalize_plural: bool,
+    lemmatizer: LemmaFn | None,
     ngram_size: int,
 ) -> Tokens:
     if tokenizer is not None:
@@ -119,7 +185,9 @@ def _ensure_tokens(
         keep_whitespace=keep_whitespace,
         strip_punctuation=strip_punctuation,
         stop_words=stop_words,
+        use_default_stopwords=use_default_stopwords,
         normalize_plural=normalize_plural,
+        lemmatizer=lemmatizer,
         ngram_size=ngram_size,
     )
 
@@ -223,7 +291,9 @@ def jaccard_index_text(
     keep_whitespace: bool = False,
     strip_punctuation: bool = False,
     stop_words: Collection[str] | None = None,
+    use_default_stopwords: bool = False,
     normalize_plural: bool = False,
+    lemmatizer: LemmaFn | None = None,
     ngram_size: int = 1,
     respect_positions: bool = False,
 ) -> float:
@@ -232,7 +302,7 @@ def jaccard_index_text(
     On peut:
         - laisser mode="char" pour compter les lettres (doublons conservent leur poids),
         - utiliser mode="word" pour travailler sur les mots,
-        - activer la normalisation (ponctuation, stop-words, pluriels, n-grammes),
+        - activer la normalisation (ponctuation, stop-words, pluriels, lemme, n-grammes),
         - mettre `respect_positions=True` pour n'autoriser les correspondances qu'au même index
           (formule utilisée dans le cours: union = max(len(A), len(B))).
         - ou bien fournir un tokenizer custom via l'argument tokenizer.
@@ -246,7 +316,9 @@ def jaccard_index_text(
         keep_whitespace,
         strip_punctuation,
         stop_words,
+        use_default_stopwords,
         normalize_plural,
+        lemmatizer,
         ngram_size,
     )
     tokens_b = _ensure_tokens(
@@ -257,7 +329,9 @@ def jaccard_index_text(
         keep_whitespace,
         strip_punctuation,
         stop_words,
+        use_default_stopwords,
         normalize_plural,
+        lemmatizer,
         ngram_size,
     )
     if respect_positions:
@@ -275,7 +349,9 @@ def jaccard_components_text(
     keep_whitespace: bool = False,
     strip_punctuation: bool = False,
     stop_words: Collection[str] | None = None,
+    use_default_stopwords: bool = False,
     normalize_plural: bool = False,
+    lemmatizer: LemmaFn | None = None,
     ngram_size: int = 1,
     respect_positions: bool = False,
 ) -> Tuple[int, int]:
@@ -293,7 +369,9 @@ def jaccard_components_text(
         keep_whitespace,
         strip_punctuation,
         stop_words,
+        use_default_stopwords,
         normalize_plural,
+        lemmatizer,
         ngram_size,
     )
     tokens_b = _ensure_tokens(
@@ -304,7 +382,9 @@ def jaccard_components_text(
         keep_whitespace,
         strip_punctuation,
         stop_words,
+        use_default_stopwords,
         normalize_plural,
+        lemmatizer,
         ngram_size,
     )
     if respect_positions:
@@ -322,7 +402,9 @@ def jaccard_distance_text(
     keep_whitespace: bool = False,
     strip_punctuation: bool = False,
     stop_words: Collection[str] | None = None,
+    use_default_stopwords: bool = False,
     normalize_plural: bool = False,
+    lemmatizer: LemmaFn | None = None,
     ngram_size: int = 1,
     respect_positions: bool = False,
 ) -> float:
@@ -337,7 +419,9 @@ def jaccard_distance_text(
         keep_whitespace=keep_whitespace,
         strip_punctuation=strip_punctuation,
         stop_words=stop_words,
+        use_default_stopwords=use_default_stopwords,
         normalize_plural=normalize_plural,
+        lemmatizer=lemmatizer,
         ngram_size=ngram_size,
         respect_positions=respect_positions,
     )
