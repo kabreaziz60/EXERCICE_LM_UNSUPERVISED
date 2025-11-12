@@ -14,7 +14,8 @@ python3 jaccard_text.py
 
 Le script affiche deux exemples :
 1. comparaison caractere par caractere de `"Je mange"` et `"Je suis une grande"`;
-2. comparaison mot a mot de `"banane mangue citron"` et `"banane mangues citron"`.
+2. comparaison mot a mot de `"banane mangue citron"` et `"banane mangues citron"`;
+3. un exemple textuel combinant stop-words, synonymes (`auto` → `voiture`) et normalisation.
 
 Chaque exemple detaille :
 - le comptage des tokens,
@@ -36,9 +37,23 @@ La fonction principale `jaccard_index_text` accepte désormais une série d'opti
 | `stop_words` | Ajoute/override votre propre liste (cumulable avec `use_default_stopwords`). |
 | `normalize_plural` | Simplifie la gestion des pluriels en enlevant un `s` final (solution rapide pour commencer). |
 | `lemmatizer` | Permet de brancher une fonction de lemmatisation/stemming maison (ex: `lambda t: stemmer.stem(t)`). |
+| `use_default_synonyms` / `synonyms_map` | Recodent des synonymes vers un même représentant (`auto`, `car`, `automobile` → `voiture`). |
 | `ngram_size` | Produit des n-grammes glissants (ex: bigrammes de caractères pour capter les lettres adjacentes). |
 | `respect_positions` | Active la version *positionnelle* : seuls les tokens alignés (même index) peuvent correspondre, l'union vaut `max(len(A), len(B))`. |
 | `tokenizer` | Toujours possible d'injecter une fonction maison si l'on veut une logique totalement custom (nettoyage, synonymes...). |
+
+### Questions du cours ➜ options
+
+| Question (slide) | Option(s) à activer |
+| --- | --- |
+| Pluriel vs singulier (`dog` vs `dogs`) | `normalize_plural=True` ou `lemmatizer` personnalisée |
+| Position des mots/lettres (`Dog bites man` vs `Man bites dog`) | `respect_positions=True` |
+| Synonymes (`car`, `automobile`, `vehicle`) | `use_default_synonyms=True` ou `synonyms_map={...}` |
+| Stop-words (`of`, `the`, `de`, `et`...) | `use_default_stopwords=True` + éventuellement `stop_words={...}` |
+| Mots identiques multiples (`Good good day`) | géré nativement par le multiset (rien à faire) |
+| Normalisation (`running` vs `run`) | brancher `lemmatizer`, `normalize_plural`, ou un tokenizer custom |
+
+Une fois ces paramètres compris, il devient simple de mixer plusieurs stratégies (ex : supprimer la ponctuation, ignorer les stop-words, respecter les positions et mapper certains synonymes) pour générer un indice de Jaccard adapté à la question métier.
 
 > **Doublons / multiensembles** : les tokens sont comptés via `collections.Counter`, donc `"good good day"` ≠ `"good day"` (le multiset retient bien les répétitions).
 

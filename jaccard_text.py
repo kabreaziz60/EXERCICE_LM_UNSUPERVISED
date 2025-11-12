@@ -9,12 +9,13 @@ ou meme fournir un tokeniseur custom.
 from __future__ import annotations
 
 from collections import Counter
-from typing import Callable, Collection, Iterable, List, Sequence, Tuple
+from typing import Callable, Collection, Iterable, List, Mapping, Sequence, Tuple
 import string
 
 Tokens = List[str]
 Tokenizer = Callable[[str], Tokens]
 LemmaFn = Callable[[str], str]
+SynonymMap = Mapping[str, str]
 
 # Petite liste mixte de stop-words FR/EN pour démarrer.
 DEFAULT_STOP_WORDS = {
@@ -94,6 +95,20 @@ DEFAULT_STOP_WORDS = {
 
 _PUNCTUATION_TABLE = str.maketrans("", "", string.punctuation)
 
+# Dictionnaire de synonymes simple pour montrer comment regrouper les mots proches.
+DEFAULT_SYNONYM_MAP: dict[str, str] = {
+    "auto": "voiture",
+    "automobile": "voiture",
+    "car": "voiture",
+    "cars": "voiture",
+    "vehicle": "voiture",
+    "véhicule": "voiture",
+    "voitures": "voiture",
+    "bike": "velo",
+    "bicycle": "velo",
+    "vélo": "velo",
+}
+
 
 def tokenize_text(
     text: str,
@@ -105,6 +120,8 @@ def tokenize_text(
     use_default_stopwords: bool = False,
     normalize_plural: bool = False,
     lemmatizer: LemmaFn | None = None,
+    synonyms_map: SynonymMap | None = None,
+    use_default_synonyms: bool = False,
     ngram_size: int = 1,
 ) -> Tokens:
     """Transforme une chaine en liste de tokens pour char ou word.
@@ -120,6 +137,8 @@ def tokenize_text(
         use_default_stopwords: lorsqu'il est vrai, applique `DEFAULT_STOP_WORDS`.
         normalize_plural: tentative simple pour ramener les pluriels a leur singulier.
         lemmatizer: fonction pour normaliser chaque token (hook pour stem/lemma externe).
+        synonyms_map: mapping custom pour réécrire certains mots en un représentant commun.
+        use_default_synonyms: applique `DEFAULT_SYNONYM_MAP` si True.
         ngram_size: produit des n-grammes glissants si > 1.
     """
 
@@ -157,6 +176,18 @@ def tokenize_text(
     if lemmatizer and mode == "word":
         tokens = [lemmatizer(tok) for tok in tokens]
 
+    active_synonyms: SynonymMap | None = None
+    if use_default_synonyms or synonyms_map:
+        merged: dict[str, str] = {}
+        if use_default_synonyms:
+            merged.update(DEFAULT_SYNONYM_MAP)
+        if synonyms_map:
+            merged.update(synonyms_map)
+        active_synonyms = merged
+
+    if active_synonyms and mode == "word":
+        tokens = [active_synonyms.get(tok, tok) for tok in tokens]
+
     if ngram_size > 1:
         tokens = _generate_ngrams(tokens, ngram_size)
 
@@ -174,6 +205,8 @@ def _ensure_tokens(
     use_default_stopwords: bool,
     normalize_plural: bool,
     lemmatizer: LemmaFn | None,
+    synonyms_map: SynonymMap | None,
+    use_default_synonyms: bool,
     ngram_size: int,
 ) -> Tokens:
     if tokenizer is not None:
@@ -188,6 +221,8 @@ def _ensure_tokens(
         use_default_stopwords=use_default_stopwords,
         normalize_plural=normalize_plural,
         lemmatizer=lemmatizer,
+        synonyms_map=synonyms_map,
+        use_default_synonyms=use_default_synonyms,
         ngram_size=ngram_size,
     )
 
@@ -294,6 +329,8 @@ def jaccard_index_text(
     use_default_stopwords: bool = False,
     normalize_plural: bool = False,
     lemmatizer: LemmaFn | None = None,
+    synonyms_map: SynonymMap | None = None,
+    use_default_synonyms: bool = False,
     ngram_size: int = 1,
     respect_positions: bool = False,
 ) -> float:
@@ -319,6 +356,8 @@ def jaccard_index_text(
         use_default_stopwords,
         normalize_plural,
         lemmatizer,
+        synonyms_map,
+        use_default_synonyms,
         ngram_size,
     )
     tokens_b = _ensure_tokens(
@@ -332,6 +371,8 @@ def jaccard_index_text(
         use_default_stopwords,
         normalize_plural,
         lemmatizer,
+        synonyms_map,
+        use_default_synonyms,
         ngram_size,
     )
     if respect_positions:
@@ -352,6 +393,8 @@ def jaccard_components_text(
     use_default_stopwords: bool = False,
     normalize_plural: bool = False,
     lemmatizer: LemmaFn | None = None,
+    synonyms_map: SynonymMap | None = None,
+    use_default_synonyms: bool = False,
     ngram_size: int = 1,
     respect_positions: bool = False,
 ) -> Tuple[int, int]:
@@ -372,6 +415,8 @@ def jaccard_components_text(
         use_default_stopwords,
         normalize_plural,
         lemmatizer,
+        synonyms_map,
+        use_default_synonyms,
         ngram_size,
     )
     tokens_b = _ensure_tokens(
@@ -385,6 +430,8 @@ def jaccard_components_text(
         use_default_stopwords,
         normalize_plural,
         lemmatizer,
+        synonyms_map,
+        use_default_synonyms,
         ngram_size,
     )
     if respect_positions:
@@ -405,6 +452,8 @@ def jaccard_distance_text(
     use_default_stopwords: bool = False,
     normalize_plural: bool = False,
     lemmatizer: LemmaFn | None = None,
+    synonyms_map: SynonymMap | None = None,
+    use_default_synonyms: bool = False,
     ngram_size: int = 1,
     respect_positions: bool = False,
 ) -> float:
@@ -422,6 +471,8 @@ def jaccard_distance_text(
         use_default_stopwords=use_default_stopwords,
         normalize_plural=normalize_plural,
         lemmatizer=lemmatizer,
+        synonyms_map=synonyms_map,
+        use_default_synonyms=use_default_synonyms,
         ngram_size=ngram_size,
         respect_positions=respect_positions,
     )
@@ -491,5 +542,29 @@ if __name__ == "__main__":
     )
     print(f"Intersection (numerateur): {word_pos_intersection}")
     print(f"Union (denominateur): {word_pos_union}")
-    print(f"Indice de Jaccard positionnel (word): {sim_word_pos:.3f}")
-    print(f"Distance positionnelle (word): {1 - sim_word_pos:.3f}")
+print(f"Indice de Jaccard positionnel (word): {sim_word_pos:.3f}")
+print(f"Distance positionnelle (word): {1 - sim_word_pos:.3f}")
+
+print("\n=== Exemple stop-words + synonymes + normalisation ===")
+doc_a = "La voiture est plus rapide que l'auto"
+doc_b = "Cette automobile est très rapide"
+tokens_doc_a = tokenize_text(
+    doc_a,
+    mode="word",
+    strip_punctuation=True,
+    use_default_stopwords=True,
+    use_default_synonyms=True,
+    normalize_plural=True,
+)
+tokens_doc_b = tokenize_text(
+    doc_b,
+    mode="word",
+    strip_punctuation=True,
+    use_default_stopwords=True,
+    use_default_synonyms=True,
+    normalize_plural=True,
+)
+_pretty_counter("Doc A tokens", tokens_doc_a)
+_pretty_counter("Doc B tokens", tokens_doc_b)
+sim_docs = jaccard_index_from_tokens(tokens_doc_a, tokens_doc_b)
+print(f"Indice de Jaccard (word + normalisation): {sim_docs:.3f}")
