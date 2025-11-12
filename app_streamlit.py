@@ -28,6 +28,7 @@ with st.sidebar:
         help="Ex: voiture=automobile",
     )
     ngram_size = st.number_input("Taille n-gramme", min_value=1, max_value=5, value=1)
+    count_duplicates = st.checkbox("Compter les doublons (multiset)", value=True)
 
 
 text_a = st.text_area("Texte A", value="banane mangue citron")
@@ -60,7 +61,11 @@ params = dict(
 token_list_a = jt.tokenize_text(text_a, **params)
 token_list_b = jt.tokenize_text(text_b, **params)
 
-index_params = dict(params, respect_positions=respect_positions)
+index_params = dict(
+    params,
+    respect_positions=respect_positions,
+    count_duplicates=count_duplicates,
+)
 index = jt.jaccard_index_text(text_a, text_b, **index_params)
 distance = jt.jaccard_distance_text(text_a, text_b, **index_params)
 inter, union = jt.jaccard_components_text(text_a, text_b, **index_params)
@@ -78,6 +83,8 @@ col_a.write(token_list_a)
 col_b.write(token_list_b)
 
 st.caption(
-    "Activez l'option 'Respecter l'ordre / positions' pour appliquer la formule "
-    "positionnelle du cours (union = max(len(A), len(B)))."
+    "• Décochez 'Compter les doublons' pour reproduire l'exemple du cours "
+    "`banane`/`citron` (union = 9).\n"
+    "• Activez 'Respecter l'ordre / positions' pour appliquer la formule "
+    "positionnelle (union = max(len(A), len(B)))."
 )

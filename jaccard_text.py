@@ -250,9 +250,17 @@ def _generate_ngrams(tokens: Sequence[str], size: int) -> Tokens:
 
 
 def jaccard_components_from_tokens(
-    tokens_a: Iterable[str], tokens_b: Iterable[str]
+    tokens_a: Iterable[str],
+    tokens_b: Iterable[str],
+    *,
+    count_duplicates: bool = True,
 ) -> Tuple[int, int]:
     """Retourne (intersection, union) pour deux sequences tokenisees."""
+
+    if not count_duplicates:
+        set_a = set(tokens_a)
+        set_b = set(tokens_b)
+        return len(set_a & set_b), len(set_a | set_b)
 
     counter_a = Counter(tokens_a)
     counter_b = Counter(tokens_b)
@@ -288,10 +296,19 @@ def jaccard_components_positional(
     return intersection, union
 
 
-def jaccard_index_from_tokens(tokens_a: Iterable[str], tokens_b: Iterable[str]) -> float:
+def jaccard_index_from_tokens(
+    tokens_a: Iterable[str],
+    tokens_b: Iterable[str],
+    *,
+    count_duplicates: bool = True,
+) -> float:
     """Indice de Jaccard pour deux sequences deja tokenisees."""
 
-    intersection, union = jaccard_components_from_tokens(tokens_a, tokens_b)
+    intersection, union = jaccard_components_from_tokens(
+        tokens_a,
+        tokens_b,
+        count_duplicates=count_duplicates,
+    )
 
     if union == 0:
         return 1.0
@@ -310,10 +327,19 @@ def jaccard_index_positional(tokens_a: Sequence[str], tokens_b: Sequence[str]) -
     return intersection / union
 
 
-def jaccard_distance_from_tokens(tokens_a: Iterable[str], tokens_b: Iterable[str]) -> float:
+def jaccard_distance_from_tokens(
+    tokens_a: Iterable[str],
+    tokens_b: Iterable[str],
+    *,
+    count_duplicates: bool = True,
+) -> float:
     """Distance de Jaccard (= 1 - indice)."""
 
-    return 1.0 - jaccard_index_from_tokens(tokens_a, tokens_b)
+    return 1.0 - jaccard_index_from_tokens(
+        tokens_a,
+        tokens_b,
+        count_duplicates=count_duplicates,
+    )
 
 
 def jaccard_index_text(
@@ -332,6 +358,7 @@ def jaccard_index_text(
     synonyms_map: SynonymMap | None = None,
     use_default_synonyms: bool = False,
     ngram_size: int = 1,
+    count_duplicates: bool = True,
     respect_positions: bool = False,
 ) -> float:
     """Indice de Jaccard pour deux textes.
@@ -340,6 +367,7 @@ def jaccard_index_text(
         - laisser mode="char" pour compter les lettres (doublons conservent leur poids),
         - utiliser mode="word" pour travailler sur les mots,
         - activer la normalisation (ponctuation, stop-words, pluriels, lemme, n-grammes),
+        - décocher `count_duplicates` pour ignorer les doublons quand l'ordre n'est pas pris en compte,
         - mettre `respect_positions=True` pour n'autoriser les correspondances qu'au même index
           (formule utilisée dans le cours: union = max(len(A), len(B))).
         - ou bien fournir un tokenizer custom via l'argument tokenizer.
@@ -377,7 +405,11 @@ def jaccard_index_text(
     )
     if respect_positions:
         return jaccard_index_positional(tokens_a, tokens_b)
-    return jaccard_index_from_tokens(tokens_a, tokens_b)
+    return jaccard_index_from_tokens(
+        tokens_a,
+        tokens_b,
+        count_duplicates=count_duplicates,
+    )
 
 
 def jaccard_components_text(
@@ -396,12 +428,14 @@ def jaccard_components_text(
     synonyms_map: SynonymMap | None = None,
     use_default_synonyms: bool = False,
     ngram_size: int = 1,
+    count_duplicates: bool = True,
     respect_positions: bool = False,
 ) -> Tuple[int, int]:
     """Composants (intersection, union) de Jaccard pour deux textes.
 
     Lorsque `respect_positions=True`, on applique la version positionnelle:
     intersection = nombre de positions identiques, union = max(len(A), len(B)).
+    Sinon, `count_duplicates=False` permet de ne considérer qu'une occurrence par token.
     """
 
     tokens_a = _ensure_tokens(
@@ -436,7 +470,11 @@ def jaccard_components_text(
     )
     if respect_positions:
         return jaccard_components_positional(tokens_a, tokens_b)
-    return jaccard_components_from_tokens(tokens_a, tokens_b)
+    return jaccard_components_from_tokens(
+        tokens_a,
+        tokens_b,
+        count_duplicates=count_duplicates,
+    )
 
 
 def jaccard_distance_text(
@@ -455,6 +493,7 @@ def jaccard_distance_text(
     synonyms_map: SynonymMap | None = None,
     use_default_synonyms: bool = False,
     ngram_size: int = 1,
+    count_duplicates: bool = True,
     respect_positions: bool = False,
 ) -> float:
     """Distance de Jaccard entre deux textes (wrapper pratique)."""
@@ -474,6 +513,7 @@ def jaccard_distance_text(
         synonyms_map=synonyms_map,
         use_default_synonyms=use_default_synonyms,
         ngram_size=ngram_size,
+        count_duplicates=count_duplicates,
         respect_positions=respect_positions,
     )
 
@@ -515,6 +555,21 @@ if __name__ == "__main__":
     print(f"Union (denominateur): {pos_union}")
     print(f"Indice de Jaccard positionnel (char): {sim_char_pos:.3f}")
     print(f"Distance positionnelle (char): {1 - sim_char_pos:.3f}\n")
+
+    print("=== Exemple caracteres sans doublons (banane vs citron) ===")
+    uniq_inter, uniq_union = jaccard_components_text(
+        "banane",
+        "citron",
+        count_duplicates=False,
+    )
+    uniq_sim = jaccard_index_text(
+        "banane",
+        "citron",
+        count_duplicates=False,
+    )
+    print(f"Intersection (numerateur): {uniq_inter}")
+    print(f"Union (denominateur): {uniq_union}")
+    print(f"Indice de Jaccard (sans doublons): {uniq_sim:.3f}\n")
 
     print("=== Exemple mot a mot ===")
     phrase_a = "banane mangue citron"

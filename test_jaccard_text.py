@@ -39,6 +39,18 @@ def test_stop_words_and_synonyms_normalize_tokens():
     assert sim == pytest.approx(2 / 3)
 
 
+def test_unique_letters_without_duplicates_matches_course_example():
+    """En ignorant les doublons, banane/citron donne union=9."""
+
+    inter, union = jt.jaccard_components_text(
+        "banane",
+        "citron",
+        count_duplicates=False,
+    )
+    assert inter == 1
+    assert union == 9
+
+
 def test_custom_synonym_map_overrides_default():
     """On peut injecter sa propre table de synonymes."""
 

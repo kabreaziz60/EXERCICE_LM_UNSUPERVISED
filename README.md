@@ -39,6 +39,7 @@ La fonction principale `jaccard_index_text` accepte désormais une série d'opti
 | `lemmatizer` | Permet de brancher une fonction de lemmatisation/stemming maison (ex: `lambda t: stemmer.stem(t)`). |
 | `use_default_synonyms` / `synonyms_map` | Recodent des synonymes vers un même représentant (`auto`, `car`, `automobile` → `voiture`). |
 | `ngram_size` | Produit des n-grammes glissants (ex: bigrammes de caractères pour capter les lettres adjacentes). |
+| `count_duplicates` | `True` (défaut) pour compter chaque occurrence ; `False` pour conserver une seule occurrence (comme l'exemple `banane`/`citron`). |
 | `respect_positions` | Active la version *positionnelle* : seuls les tokens alignés (même index) peuvent correspondre, l'union vaut `max(len(A), len(B))`. |
 | `tokenizer` | Toujours possible d'injecter une fonction maison si l'on veut une logique totalement custom (nettoyage, synonymes...). |
 
@@ -50,7 +51,8 @@ La fonction principale `jaccard_index_text` accepte désormais une série d'opti
 | Position des mots/lettres (`Dog bites man` vs `Man bites dog`) | `respect_positions=True` |
 | Synonymes (`car`, `automobile`, `vehicle`) | `use_default_synonyms=True` ou `synonyms_map={...}` |
 | Stop-words (`of`, `the`, `de`, `et`...) | `use_default_stopwords=True` + éventuellement `stop_words={...}` |
-| Mots identiques multiples (`Good good day`) | géré nativement par le multiset (rien à faire) |
+| Mots identiques multiples (`Good good day`) | géré nativement (`count_duplicates=True`) |
+| Exemple `banane` vs `citron` (lettres uniques) | `count_duplicates=False` |
 | Normalisation (`running` vs `run`) | brancher `lemmatizer`, `normalize_plural`, ou un tokenizer custom |
 
 Une fois ces paramètres compris, il devient simple de mixer plusieurs stratégies (ex : supprimer la ponctuation, ignorer les stop-words, respecter les positions et mapper certains synonymes) pour générer un indice de Jaccard adapté à la question métier.
@@ -84,4 +86,4 @@ streamlit run app_streamlit.py
 L'application propose :
 - deux zones de texte pour les documents A et B ;
 - un panneau latéral avec les paramètres (mode, position, stop-words, synonymes, n-grammes, etc.) ;
-- l'affichage en temps réel de l'intersection, de l'union, de l'indice et des tokens utilisés.
+- l'affichage en temps réel de l'intersection, de l'union, de l'indice et des tokens utilisés; pensez à décocher `Compter les doublons` pour retrouver les unions du cours (`banane`/`citron` → 9).
