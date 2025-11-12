@@ -61,6 +61,27 @@ Des variantes `jaccard_distance_text` et `jaccard_components_text` sont egalemen
 
 ## Travaux a suivre
 
-- Ajouter des tests unitaires (ex: pytest) pour valider les cas limites.
+- Ajouter des tests unitaires (ex: pytest) pour valider les cas limites. ✅ `pytest -q` exécute désormais `test_jaccard_text.py`.
 - Documenter des exemples supplementaires (synonymes, normalisation, stopwords...).
 - Eventuellement proposer une version Notebook pour les demonstrations en cours.
+
+## Tests
+
+```bash
+pip install pytest  # si nécessaire
+pytest -q
+```
+
+## Interface Streamlit
+
+Pour tester toutes les options via une interface graphique :
+
+```bash
+pip install streamlit  # première fois uniquement
+streamlit run app_streamlit.py
+```
+
+L'application propose :
+- deux zones de texte pour les documents A et B ;
+- un panneau latéral avec les paramètres (mode, position, stop-words, synonymes, n-grammes, etc.) ;
+- l'affichage en temps réel de l'intersection, de l'union, de l'indice et des tokens utilisés.
