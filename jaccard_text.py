@@ -542,29 +542,29 @@ if __name__ == "__main__":
     )
     print(f"Intersection (numerateur): {word_pos_intersection}")
     print(f"Union (denominateur): {word_pos_union}")
-print(f"Indice de Jaccard positionnel (word): {sim_word_pos:.3f}")
-print(f"Distance positionnelle (word): {1 - sim_word_pos:.3f}")
+    print(f"Indice de Jaccard positionnel (word): {sim_word_pos:.3f}")
+    print(f"Distance positionnelle (word): {1 - sim_word_pos:.3f}")
 
-print("\n=== Exemple stop-words + synonymes + normalisation ===")
-doc_a = "La voiture est plus rapide que l'auto"
-doc_b = "Cette automobile est très rapide"
-tokens_doc_a = tokenize_text(
-    doc_a,
-    mode="word",
-    strip_punctuation=True,
-    use_default_stopwords=True,
-    use_default_synonyms=True,
-    normalize_plural=True,
-)
-tokens_doc_b = tokenize_text(
-    doc_b,
-    mode="word",
-    strip_punctuation=True,
-    use_default_stopwords=True,
-    use_default_synonyms=True,
-    normalize_plural=True,
-)
-_pretty_counter("Doc A tokens", tokens_doc_a)
-_pretty_counter("Doc B tokens", tokens_doc_b)
-sim_docs = jaccard_index_from_tokens(tokens_doc_a, tokens_doc_b)
-print(f"Indice de Jaccard (word + normalisation): {sim_docs:.3f}")
+    print("\n=== Exemple stop-words + synonymes + normalisation ===")
+    doc_a = "La voiture est plus rapide que l'auto"
+    doc_b = "Cette automobile est très rapide"
+    tokens_doc_a = tokenize_text(
+        doc_a,
+        mode="word",
+        strip_punctuation=True,
+        use_default_stopwords=True,
+        use_default_synonyms=True,
+        normalize_plural=True,
+    )
+    tokens_doc_b = tokenize_text(
+        doc_b,
+        mode="word",
+        strip_punctuation=True,
+        use_default_stopwords=True,
+        use_default_synonyms=True,
+        normalize_plural=True,
+    )
+    _pretty_counter("Doc A tokens", tokens_doc_a)
+    _pretty_counter("Doc B tokens", tokens_doc_b)
+    sim_docs = jaccard_index_from_tokens(tokens_doc_a, tokens_doc_b)
+    print(f"Indice de Jaccard (word + normalisation): {sim_docs:.3f}")
