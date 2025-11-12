@@ -24,11 +24,19 @@ Chaque exemple detaille :
 
 ## Personnalisation
 
-La fonction principale `jaccard_index_text` accepte plusieurs paramètres :
-- `mode="char"` (defaut) ou `mode="word"` pour choisir le type de tokens ;
-- `lowercase=True` pour ignorer la casse ;
-- `keep_whitespace=False` pour ignorer les espaces en mode caractere ;
-- `tokenizer` pour brancher votre propre fonction de tokenisation (ex: n-grammes, nettoyage du texte, etc.).
+La fonction principale `jaccard_index_text` accepte désormais une série d'options pour façonner la tokenisation :
+
+| Option | Description |
+| --- | --- |
+| `mode` | `"char"` (défaut) ou `"word"` selon que l'on travaille au niveau lettre ou mot. |
+| `lowercase` | Normalise en minuscules pour ignorer la casse. |
+| `keep_whitespace` | Utile en mode caractère si l'on souhaite garder les espaces. |
+| `strip_punctuation` | Supprime la ponctuation de base (`string.punctuation`) avant tokenisation. |
+| `stop_words` | Collection personnalisée de stop-words à ignorer (un set mixte FR/EN est fourni via `DEFAULT_STOP_WORDS`). |
+| `normalize_plural` | Simplifie la gestion des pluriels en enlevant un `s` final (solution rapide pour commencer). |
+| `ngram_size` | Produit des n-grammes glissants (ex: bigrammes de caractères pour capter les lettres adjacentes). |
+| `respect_positions` | Active la version *positionnelle* de la formule du cours : seuls les tokens alignés (même index) peuvent correspondre, l'union vaut `max(len(A), len(B))`. |
+| `tokenizer` | Toujours possible d'injecter une fonction maison si l'on veut une logique totalement custom (lemmatisation, synonymes, etc.). |
 
 Des variantes `jaccard_distance_text` et `jaccard_components_text` sont egalement exposes pour recuperer respectivement la distance ou le duo (intersection, union).
 
